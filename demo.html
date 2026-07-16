@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeepSeek - 探索未至之境</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",Roboto,sans-serif;background:#fff;color:#1d1d1f;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column}
+
+.browser-bar{height:42px;background:#dee1e6;display:flex;align-items:center;padding:0 12px;gap:6px;flex-shrink:0}
+.chrome-btn{width:28px;height:28px;border-radius:50%;border:none;background:none;color:#5f6368;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.chrome-btn:hover{background:rgba(0,0,0,.08)}
+.chrome-btn svg{width:16px;height:16px}
+.chrome-url{flex:1;max-width:680px;height:30px;background:#fff;border-radius:15px;display:flex;align-items:center;padding:0 12px;gap:6px;font-size:12px;color:#202124;margin:0 8px}
+.chrome-url svg{width:12px;height:12px}
+.chrome-right{display:flex;align-items:center;gap:6px;margin-left:auto}
+.ext-icon{width:28px;height:28px;border-radius:6px;background:#4d6bfe;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;position:relative;transition:transform .15s}
+.ext-icon:hover{transform:scale(1.08)}
+.ext-icon svg{width:14px;height:14px}
+.ext-dot{position:absolute;top:-1px;right:-1px;width:8px;height:8px;border-radius:50%;background:#22c55e;border:2px solid #dee1e6}
+.ext-dot.pulse{animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.5)}50%{box-shadow:0 0 0 5px rgba(34,197,94,0)}}
+.chrome-avatar{width:28px;height:28px;border-radius:50%;background:#5e35b1;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+
+.app{display:flex;width:100%;height:calc(100% - 42px)}
+
+.sidebar{width:220px;background:#f8f9fa;border-right:1px solid #e8eaed;display:flex;flex-direction:column;flex-shrink:0}
+.sidebar-head{padding:10px 12px;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:6px;color:#4d6bfe;font-size:18px;font-weight:700}
+.logo svg{width:26px;height:26px}
+.sidebar-head-btns{display:flex;gap:4px}
+.sidebar-head-btns button{width:30px;height:30px;border-radius:8px;border:none;background:none;color:#5f6368;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.sidebar-head-btns button:hover{background:rgba(0,0,0,.06)}
+.sidebar-head-btns svg{width:16px;height:16px}
+
+.new-chat-btn{margin:4px 12px 12px;height:40px;border-radius:12px;background:#fff;border:1px solid #e0e0e0;box-shadow:0 1px 3px rgba(0,0,0,.08);color:#1d1d1f;display:flex;align-items:center;justify-content:center;gap:6px;font-size:14px;font-weight:500;cursor:pointer}
+.new-chat-btn:hover{background:#f5f5f7}
+.new-chat-btn svg{width:16px;height:16px}
+
+.history{flex:1;overflow-y:auto;padding:0 8px 8px}
+.history::-webkit-scrollbar{width:4px}
+.history::-webkit-scrollbar-thumb{background:#dadce0;border-radius:2px}
+.history-group{padding:10px 8px 6px;font-size:12px;color:#80868b;font-weight:500}
+.history-item{padding:8px 10px;border-radius:8px;font-size:13px;color:#3c4043;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
+.history-item:hover{background:#eef0f2}
+.history-item.active{background:#e8eaed;color:#1d1d1f;font-weight:500}
+.green-dot{width:6px;height:6px;border-radius:50%;background:#22c55e;flex-shrink:0}
+
+.sidebar-foot{padding:10px 12px;border-top:1px solid #e8eaed;display:flex;align-items:center;gap:8px}
+.user-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#ff8a65,#ffab91);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+.user-name{flex:1;font-size:13px;color:#1d1d1f;font-weight:500}
+.more-btn{width:28px;height:28px;border-radius:8px;border:none;background:none;color:#5f6368;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.more-btn:hover{background:rgba(0,0,0,.06)}
+.more-btn svg{width:16px;height:16px}
+
+.main{flex:1;display:flex;flex-direction:column;background:#fff;position:relative;min-width:0;overflow:hidden}
+.flash{position:absolute;inset:0;pointer-events:none;z-index:10;opacity:0}
+.flash.blue{background:radial-gradient(circle at 50% 30%,rgba(77,107,254,.08),transparent 60%)}
+.flash.show{animation:flashA .8s ease}
+@keyframes flashA{0%,100%{opacity:0}30%{opacity:1}}
+
+.chat-scroll{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.chat-scroll::-webkit-scrollbar{width:6px}
+.chat-scroll::-webkit-scrollbar-thumb{background:#e0e0e0;border-radius:3px}
+
+.welcome{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px}
+.welcome-title{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+.welcome-title svg{width:36px;height:36px}
+.welcome-title h1{font-size:24px;font-weight:700;color:#1d1d1f}
+.expert-badge{font-size:11px;background:#4d6bfe;color:#fff;padding:3px 8px;border-radius:6px;margin-left:4px;font-weight:600;vertical-align:middle}
+
+.modes{display:flex;gap:8px;margin-bottom:28px}
+.mode-btn{display:flex;align-items:center;gap:6px;padding:8px 20px;border:1px solid #dadce0;border-radius:999px;font-size:14px;color:#3c4043;background:#fff;cursor:pointer}
+.mode-btn:hover{background:#f8f9fa}
+.mode-btn.on{border-color:#c2d0ff;background:#eef2ff;color:#4d6bfe}
+.mode-btn svg{width:16px;height:16px}
+
+.expert-hint{margin-bottom:24px;padding:10px 18px;background:#eef2ff;border:1px solid #c2d0ff;border-radius:12px;font-size:13px;color:#4d6bfe;display:flex;align-items:center;gap:8px;animation:hintIn .3s ease}
+@keyframes hintIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.hint-dot{width:7px;height:7px;border-radius:50%;background:#4d6bfe;animation:pulse 2s infinite}
+
+.suggestions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:580px}
+.sug-btn{padding:8px 16px;border:1px solid #e8eaed;border-radius:999px;background:#fff;font-size:13px;color:#5f6368;cursor:pointer}
+.sug-btn:hover{border-color:#c2d0ff;background:#eef2ff;color:#4d6bfe}
+
+.msgs{max-width:768px;width:100%;margin:0 auto;padding:24px 24px 140px}
+.sys-msg{margin-bottom:20px;padding:12px 16px;background:#eef2ff;border:1px solid #c2d0ff;border-left:4px solid #4d6bfe;border-radius:0 10px 10px 0;font-size:13px;color:#4d6bfe;display:flex;align-items:center;gap:8px}
+.sys-msg svg{width:16px;height:16px}
+.sys-tag{margin-left:auto;padding:2px 8px;background:rgba(77,107,254,.1);border-radius:4px;font-size:11px;font-weight:600}
+
+.msg{margin-bottom:28px}
+.msg.user{display:flex;justify-content:flex-end}
+.msg.user .bubble{max-width:80%;padding:12px 16px;background:#eef2ff;border-radius:16px 16px 4px 16px;font-size:14px;line-height:1.6}
+.msg.ai{display:flex;gap:12px}
+.ai-av{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;flex-shrink:0;background:#4d6bfe}
+.msg.ai.expert .ai-av{background:linear-gradient(135deg,#4d6bfe,#6b8cff)}
+.ai-body{flex:1;min-width:0}
+.ai-name{font-size:13px;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:6px;color:#5f6368}
+.msg.ai.expert .ai-name{color:#4d6bfe}
+.ai-tag{font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600;background:#f1f3f4;color:#5f6368}
+.msg.ai.expert .ai-tag{background:#eef2ff;color:#4d6bfe}
+.ai-bubble{font-size:14px;line-height:1.7;color:#1d1d1f}
+.ai-bubble p{margin-bottom:10px}
+.ai-bubble strong{font-weight:700}
+.ai-bubble ol{list-style:none;padding:0;margin:10px 0;counter-reset:s}
+.ai-bubble ol li{position:relative;padding-left:28px;margin-bottom:8px;counter-increment:s}
+.ai-bubble ol li::before{content:counter(s);position:absolute;left:0;top:2px;width:20px;height:20px;border-radius:50%;background:#eef2ff;color:#4d6bfe;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.ai-bubble pre{margin:12px 0;padding:14px 16px;background:#1e2330;color:#d4e4d4;border-radius:10px;font-size:12px;line-height:1.6;overflow-x:auto;font-family:"SF Mono","Fira Code",Consolas,"Courier New",monospace}
+.warn{margin-top:12px;padding:10px 14px;background:#fff8e1;border-left:4px solid #f9a825;border-radius:0 8px 8px 0;font-size:12px;color:#f57f17}
+.typing{display:inline-flex;gap:5px;padding:8px 0}
+.typing span{width:7px;height:7px;border-radius:50%;background:#ccc;animation:tBlink 1.3s infinite}
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+@keyframes tBlink{0%,60%,100%{opacity:.3}30%{opacity:1}}
+
+.input-area{position:absolute;left:0;right:0;bottom:0;padding:16px 24px 24px;background:linear-gradient(to bottom,transparent,#fff 30%)}
+.input-wrap{max-width:768px;margin:0 auto}
+.input-box{border:1px solid #dadce0;border-radius:24px;background:#fff;padding:12px 16px 8px;box-shadow:0 2px 12px rgba(0,0,0,.06);transition:border-color .15s,box-shadow .15s}
+.input-box:focus-within{border-color:#c2d0ff;box-shadow:0 2px 16px rgba(77,107,254,.1)}
+.input-box textarea{width:100%;border:none;outline:none;font-size:15px;line-height:1.5;resize:none;font-family:inherit;background:transparent;min-height:24px;max-height:150px}
+.input-box textarea::placeholder{color:#bdc1c6}
+.input-tools{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+.tools-l{display:flex;gap:8px}
+.tool-btn{display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 12px;border:1px solid #c2d0ff;border-radius:999px;font-size:12px;color:#4d6bfe;background:#eef2ff;cursor:pointer}
+.tool-btn:hover{background:#dde5ff}
+.tool-btn svg{width:13px;height:13px}
+.tools-r{display:flex;align-items:center;gap:8px}
+.mic-btn{width:32px;height:32px;border-radius:50%;border:none;background:none;color:#bdc1c6;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.mic-btn:hover{background:#f1f3f4;color:#5f6368}
+.mic-btn svg{width:18px;height:18px}
+.send-btn{width:32px;height:32px;border-radius:50%;border:none;background:#dadce0;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.send-btn.ready{background:#4d6bfe}
+.send-btn.ready:hover{background:#3b5ae6;transform:scale(1.06)}
+.send-btn svg{width:16px;height:16px}
+.input-hint{text-align:center;font-size:12px;color:#bdc1c6;margin-top:8px}
+.input-hint kbd{padding:1px 5px;border:1px solid #e8eaed;border-radius:4px;background:#f8f9fa;font-family:inherit;font-weight:600}
+
+.popover{position:absolute;top:50px;right:16px;width:320px;background:#fff;border:1px solid #e0e0e0;border-radius:16px;box-shadow:0 16px 48px rgba(0,0,0,.18);z-index:100;overflow:hidden;opacity:0;transform:translateY(-8px) scale(.97);pointer-events:none;transition:opacity .2s,transform .2s}
+.popover.show{opacity:1;transform:translateY(0) scale(1);pointer-events:auto}
+.pop-head{padding:16px;background:linear-gradient(135deg,#1d3b2f,#14251f);color:#fff;display:flex;align-items:center;gap:10px}
+.pop-icon{width:36px;height:36px;border-radius:10px;background:#c9f06b;color:#14251f;display:flex;align-items:center;justify-content:center}
+.pop-icon svg{width:18px;height:18px}
+.pop-title h3{font-size:14px;font-weight:700}
+.pop-title p{font-size:11px;color:#9bb5ab;margin:2px 0 0;display:flex;align-items:center;gap:5px}
+.pop-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;animation:pulse 2s infinite}
+.pop-close{margin-left:auto;width:28px;height:28px;border-radius:8px;background:none;border:none;color:#9bb5ab;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.pop-close:hover{background:rgba(255,255,255,.1);color:#fff}
+.pop-close svg{width:14px;height:14px}
+.pop-body{padding:6px 0;max-height:440px;overflow-y:auto}
+.pop-body::-webkit-scrollbar{width:4px}
+.pop-body::-webkit-scrollbar-thumb{background:#e0e0e0;border-radius:2px}
+.pop-sec{padding:12px 16px;border-bottom:1px solid #f5f5f5}
+.pop-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.pop-row strong{font-size:13px;display:block}
+.pop-row small{font-size:11px;color:#80868b;display:block;margin-top:2px}
+.toggle{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0}
+.toggle input{width:0;height:0;opacity:0}
+.toggle-track{position:absolute;inset:0;border-radius:99px;background:#dadce0;cursor:pointer;transition:.2s}
+.toggle-track::before{content:"";position:absolute;left:3px;bottom:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.2);transition:.2s}
+.toggle input:checked+.toggle-track{background:#1f8a66}
+.toggle input:checked+.toggle-track::before{transform:translateX(20px)}
+.pop-label{display:block;font-size:10px;font-weight:700;color:#80868b;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.pop-sel{width:100%;height:38px;padding:0 32px 0 12px;border:1px solid #e8eaed;border-radius:8px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2380868b' stroke-width='3'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center;font-size:12px;font-weight:600;color:#1d1d1f;outline:none;-webkit-appearance:none;appearance:none;cursor:pointer}
+.pop-sel:focus{border-color:#1f8a66}
+.pop-sel:disabled{background-color:#f8f9fa;opacity:.5;cursor:not-allowed}
+.scene-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.scene-btn{padding:10px 6px;border:1px solid #e8eaed;border-radius:8px;background:#fff;font-size:11px;font-weight:600;color:#5f6368;text-align:center;cursor:pointer}
+.scene-btn .si{display:block;font-size:16px;margin-bottom:2px}
+.scene-btn:hover{border-color:rgba(31,138,102,.4);color:#1f8a66}
+.scene-btn.sel{background:#e6f4ef;color:#1f8a66;border-color:#1f8a66}
+.pref-r{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.pref-r:last-child{margin-bottom:0}
+.pref-r span{font-size:12px;color:#3c4043}
+.pref-r .pop-sel{width:auto;height:30px;font-size:11px;padding:0 24px 0 8px}
+.pop-new{margin:8px 16px 14px;width:calc(100% - 32px);height:40px;border-radius:10px;background:#14251f;color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.pop-new:hover{background:#1f8a66}
+.pop-new svg{width:14px;height:14px}
+
+.toasts{position:fixed;left:50%;bottom:40px;transform:translateX(-50%);z-index:200;pointer-events:none}
+.toast{margin-top:6px;padding:10px 18px;border-radius:99px;background:#1d1d1f;color:#fff;font-size:13px;font-weight:600;box-shadow:0 8px 28px rgba(0,0,0,.25);display:flex;align-items:center;gap:7px;animation:tIn .25s ease,tOut .3s ease 2.5s forwards}
+.toast.ok{background:#1f8a66}
+.toast svg{width:14px;height:14px}
+@keyframes tIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes tOut{to{opacity:0;transform:translateY(12px)}}
+
+.ext-pop{animation:ePop .5s ease}
+@keyframes ePop{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}
+
+.whale{background:linear-gradient(135deg,#ff8a65,#ffab91)}
+</style>
+</head>
+<body>
+<div class="browser-bar">
+  <button class="chrome-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+  <button class="chrome-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
+  <button class="chrome-btn" id="refreshBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v6h6M20 20v-6h-6"/><path d="M20 9A8 8 0 0 0 6.3 5.3L4 10M4 15a8 8 0 0 0 13.7 3.7L20 14"/></svg></button>
+  <div class="chrome-url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>chat.deepseek.com</span></div>
+  <div class="chrome-right">
+    <button class="chrome-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.1 8.6 22 9.3 17 14 18.2 21 12 17.8 5.8 21 7 14 2 9.3 8.9 8.6 12 2"/></svg></button>
+    <button class="ext-icon" id="extBtn" title="DeepSeek Switch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M7 7h10M7 17h10M9 4 6 7l3 3M15 14l3 3-3 3"/></svg><span class="ext-dot pulse" id="extDot"></span></button>
+    <div class="chrome-avatar">赵</div>
+    <button class="chrome-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></button>
+  </div>
+</div>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <div class="logo">
+        <svg viewBox="0 0 40 40" fill="none"><path d="M20 6c2 4 6 6 10 6-4 4-6 8-6 14-4-2-8-2-14 0 0-6-2-10-6-14 4 0 8-2 10-6Z" fill="#4d6bfe"/><circle cx="14" cy="20" r="2" fill="#fff"/><circle cx="22" cy="16" r="1.5" fill="#fff"/><circle cx="20" cy="24" r="1.5" fill="#fff"/></svg>
+        <span>deepseek</span>
+      </div>
+      <div class="sidebar-head-btns">
+        <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></button>
+        <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/></svg></button>
+      </div>
+    </div>
+    <button class="new-chat-btn" id="newChatBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>开启新对话</button>
+    <div class="history" id="history">
+      <div class="history-group">7 天内</div>
+      <div class="history-item active" id="curHist"><span>用户登录模块设计</span><span class="green-dot"></span></div>
+      <div class="history-item">创意诊断系统一句话汇总</div>
+      <div class="history-item">产品功能一句话汇总</div>
+      <div class="history-item">内容风格优化</div>
+      <div class="history-group">30 天内</div>
+      <div class="history-item">优化邮件草稿申请创建Ingress</div>
+      <div class="history-item">邮件草稿优化申请</div>
+    </div>
+    <div class="sidebar-foot">
+      <div class="user-avatar whale">赵</div>
+      <span class="user-name">赵心语</span>
+      <button class="more-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="flash" id="flash"></div>
+    <div class="chat-scroll" id="chatScroll"></div>
+    <div class="input-area">
+      <div class="input-wrap">
+        <div class="input-box" id="inputBox">
+          <textarea id="msgInput" rows="1" placeholder="给 DeepSeek 发送消息"></textarea>
+          <div class="input-tools">
+            <div class="tools-l">
+              <button class="tool-btn" data-tool="think"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.5 2A2.5 2.5 0 0 0 7 4.5v.5a3 3 0 0 0-3 3 3 3 0 0 0 .5 1.7A3 3 0 0 0 5 14a3 3 0 0 0 2 2.8V18a3 3 0 0 0 6 0v-1.5a2.5 2.5 0 0 0 5 0V12a3 3 0 0 0-3-3h-.5A2.5 2.5 0 0 0 12 6.5V4.5A2.5 2.5 0 0 0 9.5 2Z"/></svg>深度思考</button>
+              <button class="tool-btn" data-tool="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>智能搜索</button>
+            </div>
+            <div class="tools-r">
+              <button class="mic-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg></button>
+              <button class="send-btn" id="sendBtn" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m12 19V5M5 12l7-7 7 7"/></svg></button>
+            </div>
+          </div>
+        </div>
+        <div class="input-hint"><kbd>Enter</kbd> 发送 · <kbd>Shift+Enter</kbd> 换行 · DeepSeek Switch 插件演示</div>
+      </div>
+    </div>
+
+    <div class="popover" id="popover">
+      <div class="pop-head">
+        <span class="pop-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M7 7h10M7 17h10M9 4 6 7l3 3M15 14l3 3-3 3"/></svg></span>
+        <div class="pop-title"><h3>DeepSeek Switch</h3><p><span class="pop-dot"></span><span id="popStatus">专家模式运行中</span></p></div>
+        <button class="pop-close" id="popClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="pop-body">
+        <div class="pop-sec"><div class="pop-row"><div><strong>自动专家模式</strong><small>进入页面 / 开启新对话时自动应用</small></div><label class="toggle"><input type="checkbox" id="tglExpert" checked><span class="toggle-track"></span></label></div></div>
+        <div class="pop-sec"><span class="pop-label">默认专家身份</span><select class="pop-sel" id="selRole"><option value="编程专家">💻 编程专家 · 全栈工程师</option><option value="写作顾问">✍️ 写作顾问 · 内容策略师</option><option value="学术导师">🎓 学术导师 · 研究方法论</option><option value="产品经理">📊 产品经理 · 用户洞察</option></select></div>
+        <div class="pop-sec"><span class="pop-label">任务场景快选</span><div class="scene-grid" id="sceneGrid"><button class="scene-btn sel" data-scene="code" data-role="编程专家"><span class="si">💻</span>代码设计</button><button class="scene-btn" data-scene="write" data-role="写作顾问"><span class="si">✍️</span>文案创作</button><button class="scene-btn" data-scene="study" data-role="学术导师"><span class="si">🎓</span>知识学习</button><button class="scene-btn" data-scene="product" data-role="产品经理"><span class="si">📊</span>产品分析</button></div></div>
+        <div class="pop-sec"><span class="pop-label">回答偏好</span><div class="pref-r"><span>详略程度</span><select class="pop-sel" id="prefD"><option>精简结论</option><option selected>标准详略</option><option>深入展开</option></select></div><div class="pref-r"><span>内容格式</span><select class="pop-sel" id="prefF"><option>结构化分点</option><option selected>结论+步骤</option><option>纯文本</option></select></div></div>
+        <div class="pop-sec"><div class="pop-row"><div><strong>新对话自动应用</strong><small>保持每次对话体验一致</small></div><label class="toggle"><input type="checkbox" id="tglAuto" checked><span class="toggle-track"></span></label></div></div>
+      </div>
+      <button class="pop-new" id="popNewChat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>模拟开启新对话</button>
+    </div>
+  </main>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+(function(){
+var S={expert:!0,autoNew:!0,role:"编程专家",scene:"code",session:1,msgs:0,typing:!1,popOpen:!1};
+var R={"编程专家":{emoji:"💻",title:"编程专家·全栈工程师",style:"先给结论·代码示例·风险提示"},"写作顾问":{emoji:"✍️",title:"写作顾问·内容策略师",style:"受众清晰·结构重写·多版本"},"学术导师":{emoji:"🎓",title:"学术导师·研究方法论",style:"直观定义·例子推导·误区分析"},"产品经理":{emoji:"📊",title:"产品经理·用户洞察",style:"用户分层·场景拆解·优先级"}};
+function $(i){return document.getElementById(i)}
+function esc(t){var d=document.createElement("div");d.textContent=t;return d.innerHTML}
+function detScene(t){if(/(代码|登录|接口|函数|bug|报错|编程|程序|组件|架构|数据库|api|前端|后端|全栈|算法|python|javascript|java|react|vue|实现|写一个|模块|防抖|token|认证)/i.test(t))return"code";if(/(文案|写作|文章|改写|润色|标题|宣传|营销|广告|邮件|推文|内容|发布|品牌)/i.test(t))return"write";if(/(解释|什么是|原理|概念|学习|论文|研究|梯度|下降|定义|理论|推导|例子|方法|闭包|费曼)/i.test(t))return"study";if(/(产品|用户|需求|市场|分析|功能|赛道|商业模式|竞品|洞察|画像|定位)/i.test(t))return"product";return"general"}
+function getSugs(s){var m={code:["帮我设计一个用户登录模块","写一个防抖函数","React 状态管理方案"],write:["优化一段产品发布文案","帮我起一个标题","改写这段品牌介绍"],study:["解释什么是梯度下降","什么是闭包？","讲讲费曼学习法"],product:["分析效率插件的核心用户","如何做需求优先级","用户画像怎么建"],general:["帮我写一段代码","优化一段文案","解释一个概念","分析一个需求"]};return m[s]||m.general}
+function whale(){return'<svg viewBox="0 0 40 40" fill="none"><path d="M20 6c2 4 6 6 10 6-4 4-6 8-6 14-4-2-8-2-14 0 0-6-2-10-6-14 4 0 8-2 10-6Z" fill="#4d6bfe"/><circle cx="14" cy="20" r="2" fill="#fff"/><circle cx="22" cy="16" r="1.5" fill="#fff"/><circle cx="20" cy="24" r="1.5" fill="#fff"/></svg>'}
+
+function renderWelcome(){
+var c=$("chatScroll");c.innerHTML="";
+var w=document.createElement("div");w.className="welcome";
+var activeMode=S.expert?1:0;
+var modes=['<button class="mode-btn'+(activeMode===0?' on':'')+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8Z"/></svg>快速模式</button>',
+'<button class="mode-btn'+(activeMode===1?' on':'')+'">◇ 专家模式</button>',
+'<button class="mode-btn'+(activeMode===2?' on':'')+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>识图模式</button>'].join("");
+var hintHtml=S.expert?'<div class="expert-hint"><span class="hint-dot"></span>DeepSeek Switch 已自动切换到「<strong>'+S.role+'</strong>」专家模式</div>':'';
+w.innerHTML='<div class="welcome-title">'+whale()+'<h1>使用快速模式开始对话</h1></div>'+
+'<div class="modes">'+modes+'</div>'+
+hintHtml+
+'<div class="suggestions">'+getSugs(S.expert?S.scene:"general").map(function(s){return'<button class="sug-btn">'+s+'</button>'}).join("")+'</div>';
+c.appendChild(w);
+w.querySelectorAll(".sug-btn").forEach(function(b){b.onclick=function(){$("msgInput").value=b.textContent;resize();updateSend();$("msgInput").focus()}});
+w.querySelectorAll(".mode-btn").forEach(function(b,idx){b.onclick=function(){w.querySelectorAll(".mode-btn").forEach(function(x){x.classList.remove("on")});b.classList.add("on");S.expert=(idx===1);$("tglExpert").checked=S.expert;syncExt();syncBox();if(idx===1){doFlash();animExt();toast("专家模式已开启",!0)}else if(idx===0){toast("已切换到快速模式",!1)}}});
+}
+
+function sendMsg(t){
+t=(t||"").trim();if(!t||S.typing)return;
+var c=$("chatScroll");
+if(S.msgs===0){
+c.innerHTML="";
+if(S.expert){var sm=document.createElement("div");sm.className="sys-msg";sm.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M7 7h10M7 17h10M9 4 6 7l3 3M15 14l3 3-3 3"/></svg>DeepSeek Switch 已自动应用：<strong>'+R[S.role].title+'</strong><span class="sys-tag">'+R[S.role].style.split("·")[0]+'</span>';c.appendChild(sm)}
+var mc=document.createElement("div");mc.className="msgs";mc.id="mc";c.appendChild(mc);
+}
+var mc=$("mc");
+var um=document.createElement("div");um.className="msg user";um.innerHTML='<div class="bubble">'+esc(t)+'</div>';mc.appendChild(um);
+S.msgs++;$("msgInput").value="";resize();updateSend();c.scrollTop=c.scrollHeight;
+S.typing=!0;updateSend();
+var sc=detScene(t);
+var tm=document.createElement("div");tm.className="msg ai "+(S.expert?"expert":"normal");tm.id="tm";
+var av=S.expert?R[S.role].emoji:"D",nt=S.expert?S.role+" 正在思考":"DeepSeek 正在思考",bt=S.expert?"专家模式":"快速模式";
+tm.innerHTML='<div class="ai-av">'+av+'</div><div class="ai-body"><div class="ai-name">'+nt+'<span class="ai-tag">'+bt+'</span></div><div class="ai-bubble"><span class="typing"><span></span><span></span><span></span></span></div></div>';
+mc.appendChild(tm);c.scrollTop=c.scrollHeight;
+setTimeout(function(){
+if($("tm"))$("tm").remove();
+var rep;
+if(S.expert){
+var deep=$("prefD").value==="深入展开";
+if(S.role==="编程专家"&&sc==="code"){
+rep="<p><strong>结论：</strong>采用「短时 Access Token + Refresh Token」双令牌认证架构。</p><ol><li>认证层：签发 15 分钟 Access Token，Refresh Token 存 HttpOnly Cookie。</li><li>安全层：登录接口限流 5 次/分钟，密码 bcrypt 哈希。</li><li>会话管理：Token 黑名单写入 Redis 并设 TTL。</li>"+(deep?"<li>审计层：记录登录/刷新/撤销事件。</li>":"")+"</ol><pre>// 签发 Token\njwt.sign({uid,role},SECRET,{expiresIn:'15m'});</pre><div class='warn'>⚠️ Refresh Token 需绑定设备指纹防重放。</div>";
+}else if(S.role==="学术导师"&&sc==="study"){
+rep="<p><strong>定义：</strong>梯度下降是沿负梯度方向更新参数的迭代优化算法。</p><ol><li>初始化参数 w。</li><li>计算梯度 ∇L。</li><li>更新 w := w - η·∇L。</li><li>重复直至收敛。</li></ol><pre>例：L(w)=w², w=3, η=0.1\n新w = 3 - 0.1×6 = 2.4 → 0</pre>";
+}else if(S.role==="写作顾问"&&sc==="write"){
+rep="<p><strong>结论：</strong>用「痛点—改变—行动」三段式重写。</p><p>先压缩冗余，再强化利益点，结尾给明确CTA。</p><div class='warn'>⚠️ 保持品牌调性，避免过度承诺。</div>";
+}else if(S.role==="产品经理"&&sc==="product"){
+rep="<p><strong>结论：</strong>先划分核心用户与场景，再按需求强度排序。</p><ol><li>核心用户：高频用AI的程序员/创作者/学生。</li><li>高频场景：新建会话重复配置角色。</li><li>需求排序：自动恢复>角色切换。</li></ol><div class='warn'>⚠️ 区分「用户说的」与「用户做的」。</div>";
+}else{
+rep="<p><strong>结论：</strong>我是你的"+S.role+"，会给你结构化、可执行的建议。</p><ol><li>明确核心问题与约束。</li><li>给出分步方案。</li><li>标注风险与注意事项。</li></ol>";
+}
+}else{
+var nm={code:"当然可以，请提供更多技术栈和需求细节。",write:"好的，请把原文发给我，并告诉我调整方向。",study:"这是一个常见概念，建议查阅教材获取详细解释。",product:"建议先明确目标用户和核心场景。",general:"好的，请提供更多细节。"};
+rep="<p>"+(nm[sc]||nm.general)+"</p>";
+}
+var am=document.createElement("div");am.className="msg ai "+(S.expert?"expert":"normal");
+var aav=S.expert?R[S.role].emoji:"D",an=S.expert?S.role+" 的回答":"DeepSeek 的回答";
+am.innerHTML='<div class="ai-av">'+aav+'</div><div class="ai-body"><div class="ai-name">'+an+'<span class="ai-tag">'+bt+'</span></div><div class="ai-bubble">'+rep+'</div></div>';
+mc.appendChild(am);S.msgs++;S.typing=!1;updateSend();c.scrollTop=c.scrollHeight;
+},700+Math.random()*600);
+}
+
+function newChat(){
+S.session++;S.msgs=0;S.typing=!1;$("msgInput").value="";resize();updateSend();
+var h=$("history"),fg=h.querySelector(".history-group");
+var ni=document.createElement("div");ni.className="history-item";ni.innerHTML="<span>新对话 #"+S.session+"</span>";
+h.querySelectorAll(".history-item").forEach(function(i){i.classList.remove("active");var d=i.querySelector(".green-dot");if(d)d.remove()});
+if(fg&&fg.nextSibling)h.insertBefore(ni,fg.nextSibling);else h.appendChild(ni);
+ni.classList.add("active");
+if(S.expert&&S.autoNew){
+var d=document.createElement("span");d.className="green-dot";ni.appendChild(d);
+doFlash();animExt();renderWelcome();toast("新对话已创建 · 专家配置已自动恢复",!0);
+}else if(S.expert&&!S.autoNew){
+S.expert=!1;$("tglExpert").checked=!1;syncExt();syncBox();$("popStatus").textContent="已停用·标准模式";renderWelcome();toast("新对话 · 切回标准模式",!1);
+}else{renderWelcome();toast("新对话已创建",!1)}
+}
+
+function doFlash(){var f=$("flash");f.className="flash blue";setTimeout(function(){f.classList.add("show")},10);setTimeout(function(){f.className="flash"},900)}
+function animExt(){var b=$("extBtn");b.classList.remove("ext-pop");void b.offsetWidth;b.classList.add("ext-pop")}
+function toast(t,ok){var w=$("toasts"),d=document.createElement("div");d.className="toast"+(ok?" ok":"");d.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m5 12 4 4L19 6"/></svg>'+esc(t);w.appendChild(d);setTimeout(function(){if(d.parentNode)d.parentNode.removeChild(d)},3e3)}
+function syncExt(){var d=$("extDot");if(S.expert){d.classList.remove("off");d.classList.add("pulse")}else{d.classList.add("off");d.classList.remove("pulse")}}
+function syncBox(){if(S.expert)$("inputBox").style.borderColor="#4d6bfe";else $("inputBox").style.borderColor="#dadce0"}
+function resize(){var i=$("msgInput");i.style.height="auto";i.style.height=Math.min(i.scrollHeight,150)+"px"}
+function updateSend(){var b=$("sendBtn"),v=!!$("msgInput").value.trim()&&!S.typing;b.disabled=!v;b.classList.toggle("ready",!!v)}
+function tglPop(f){var p=$("popover"),v=typeof f==="boolean"?f:!S.popOpen;S.popOpen=v;p.classList.toggle("show",v)}
+
+function init(){
+$("extBtn").onclick=function(e){e.stopPropagation();tglPop()};
+$("popClose").onclick=function(){tglPop(!1)};
+document.onclick=function(e){if(S.popOpen&&!$("popover").contains(e.target)&&!$("extBtn").contains(e.target))tglPop(!1)};
+$("tglExpert").onchange=function(){S.expert=this.checked;syncExt();syncBox();$("selRole").disabled=!this.checked;$("popStatus").textContent=this.checked?"专家模式运行中":"已停用·标准模式";if(S.msgs===0)renderWelcome();toast(this.checked?"专家模式已开启":"已关闭",this.checked);if(this.checked){doFlash();animExt()}};
+$("tglAuto").onchange=function(){S.autoNew=this.checked;toast(this.checked?"新对话将自动应用":"不再自动应用",this.checked)};
+$("selRole").onchange=function(){S.role=this.value;$("sceneGrid").querySelectorAll(".scene-btn").forEach(function(b){b.classList.remove("sel");if(b.dataset.role===S.role){b.classList.add("sel");S.scene=b.dataset.scene}});if(S.msgs===0)renderWelcome();toast("已切换为「"+S.role+"」",!0)};
+$("sceneGrid").onclick=function(e){var b=e.target.closest(".scene-btn");if(!b)return;$("sceneGrid").querySelectorAll(".scene-btn").forEach(function(x){x.classList.remove("sel")});b.classList.add("sel");S.scene=b.dataset.scene;S.role=b.dataset.role;$("selRole").value=S.role;if(S.msgs===0)renderWelcome()};
+$("popNewChat").onclick=function(){newChat();tglPop(!1)};
+$("newChatBtn").onclick=newChat;
+$("refreshBtn").onclick=function(){S.msgs=0;S.typing=!1;$("msgInput").value="";resize();updateSend();renderWelcome();if(S.expert){doFlash();animExt();toast("已重新进入 · 专家模式自动应用",!0)}else toast("已重新进入",!1)};
+$("msgInput").oninput=function(){resize();updateSend()};
+$("msgInput").onkeydown=function(e){if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMsg($("msgInput").value)}};
+$("sendBtn").onclick=function(){sendMsg($("msgInput").value)};
+document.querySelectorAll("[data-tool]").forEach(function(b){b.onclick=function(){b.classList.toggle("active")}});
+syncExt();syncBox();renderWelcome();
+setTimeout(function(){if(S.expert)toast("已进入 chat.deepseek.com · 专家模式自动应用",!0)},500);
+}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DeepSeek Switch</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="brand-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <path d="M7 7h10M7 17h10M9 4 6 7l3 3M15 14l3 3-3 3"/>
+      </svg>
+    </div>
+    <div class="brand-copy">
+      <h1>DeepSeek Switch</h1>
+      <p><span class="status-dot" id="statusDot"></span><span id="pageStatus">正在检查页面状态…</span></p>
+    </div>
+    <span class="version">v1.0</span>
+  </header>
+
+  <main>
+    <section class="section switch-section">
+      <div>
+        <strong>自动专家模式</strong>
+        <small>首条消息发送前自动应用配置</small>
+      </div>
+      <label class="toggle" aria-label="自动专家模式">
+        <input type="checkbox" id="enabled">
+        <span class="toggle-track"></span>
+      </label>
+    </section>
+
+    <section class="section">
+      <label class="section-label" for="roleId">默认专家身份</label>
+      <select class="select-control select-large" id="roleId"></select>
+    </section>
+
+    <section class="section">
+      <span class="section-label">任务场景快选</span>
+      <div class="scene-grid" id="sceneGrid"></div>
+    </section>
+
+    <section class="section">
+      <span class="section-label">回答偏好</span>
+      <div class="preference-list">
+        <label class="preference-row">
+          <span>详略程度</span>
+          <select class="select-control" id="detail">
+            <option value="concise">精简结论</option>
+            <option value="standard">标准详略</option>
+            <option value="deep">深入展开</option>
+          </select>
+        </label>
+        <label class="preference-row">
+          <span>内容格式</span>
+          <select class="select-control" id="format">
+            <option value="structured">结构化分点</option>
+            <option value="steps">结论 + 步骤</option>
+            <option value="markdown">Markdown 文档</option>
+            <option value="plain">自然段文本</option>
+          </select>
+        </label>
+        <label class="preference-row">
+          <span>回答语言</span>
+          <select class="select-control" id="language">
+            <option value="zh-CN">简体中文</option>
+            <option value="bilingual">中英双语</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+        <label class="preference-row">
+          <span>表达语气</span>
+          <select class="select-control" id="tone">
+            <option value="professional">专业直接</option>
+            <option value="friendly">友好易懂</option>
+            <option value="rigorous">严谨审慎</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="label-row">
+        <label class="section-label" for="customPrompt">自定义专业要求</label>
+        <span class="character-count" id="characterCount">0 / 3000</span>
+      </div>
+      <textarea id="customPrompt" maxlength="3000" rows="3" placeholder="留空时使用所选专家的默认要求；也可以填写行业背景、输出规范或禁止事项。"></textarea>
+    </section>
+
+    <section class="section stacked-switches">
+      <div class="switch-row">
+        <div>
+          <strong>新对话自动应用</strong>
+          <small>每次新建会话都恢复专家配置</small>
+        </div>
+        <label class="toggle" aria-label="新对话自动应用">
+          <input type="checkbox" id="autoApplyNewChat">
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+      <div class="switch-row">
+        <div>
+          <strong>显示页面状态条</strong>
+          <small>在 DeepSeek 页面快速查看或暂停</small>
+        </div>
+        <label class="toggle" aria-label="显示页面状态条">
+          <input type="checkbox" id="showPageStatus">
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+    </section>
+
+    <div class="actions">
+      <button class="button secondary" id="applyNext" type="button">应用到下一条</button>
+      <button class="button primary" id="newChat" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        开启新对话
+      </button>
+    </div>
+  </main>
+
+  <footer>
+    <span class="save-state" id="saveState">设置自动保存</span>
+    <div class="footer-actions">
+      <button class="text-button" id="exportSettings" type="button">导出</button>
+      <button class="text-button" id="importSettings" type="button">导入</button>
+      <button class="text-button danger" id="resetSettings" type="button">重置</button>
+      <input type="file" id="importFile" accept="application/json,.json" hidden>
+    </div>
+  </footer>
+
+  <script src="../shared/config.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

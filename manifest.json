@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "DeepSeek Switch",
+  "version": "1.0.0",
+  "description": "进入 DeepSeek 或新建会话时，自动应用预设的专家角色、回答语言和输出风格。",
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://chat.deepseek.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "action": {
+    "default_title": "DeepSeek Switch",
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chat.deepseek.com/*"
+      ],
+      "css": [
+        "content/content.css"
+      ],
+      "js": [
+        "shared/config.js",
+        "content/content.js"
+      ],
+      "run_at": "document_start"
+    }
+  ]
+}
