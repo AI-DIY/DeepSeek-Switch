@@ -89,6 +89,7 @@
     try {
       await chrome.storage.sync.set({ [STORAGE_KEY]: settings });
       setSaveState("已自动保存", "saved");
+      window.setTimeout(refreshPageStatus, 120);
     } catch (_error) {
       setSaveState("保存失败", "error");
     }
@@ -130,7 +131,9 @@
       const response = await sendToActiveTab({ type: "GET_PAGE_STATE" });
       if (response && response.ok) {
         statusText.textContent = response.pending
-          ? `${response.roleName} · 等待应用到首条消息`
+          ? response.nativeExpertModeActive
+            ? `${response.roleName} · 专家模式已开启，等待首条消息`
+            : `${response.roleName} · 正在切换专家模式`
           : `${response.roleName} · ${response.enabled ? "运行中" : "已暂停"}`;
         statusDot.className = `status-dot ${response.enabled ? "online" : "offline"}`;
       }
@@ -144,7 +147,6 @@
     ["enabled", "autoApplyNewChat", "showPageStatus", "detail", "format", "language", "tone"]
       .forEach((id) => $(id).addEventListener("change", () => {
         queueSave();
-        if (id === "enabled") window.setTimeout(refreshPageStatus, 320);
       }));
 
     $("roleId").addEventListener("change", () => {
@@ -224,6 +226,7 @@
         renderSettings();
         await chrome.storage.sync.set({ [STORAGE_KEY]: settings });
         setSaveState("设置已导入", "saved");
+        window.setTimeout(refreshPageStatus, 120);
       } catch (_error) {
         setSaveState("导入文件无效", "error");
       } finally {

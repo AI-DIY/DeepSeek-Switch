@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "DeepSeek Switch",
-  "version": "1.0.0",
-  "description": "进入 DeepSeek 或新建会话时，自动应用预设的专家角色、回答语言和输出风格。",
+  "version": "1.0.1",
+  "description": "进入 DeepSeek 或新建会话时，自动开启原生专家模式并应用预设的专家角色与回答偏好。",
   "permissions": [
     "storage",
     "activeTab"

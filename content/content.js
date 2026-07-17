@@ -13,6 +13,7 @@
 
   const ROOT_ID = "deepseek-switch-root";
   const TOAST_ID = "deepseek-switch-toast";
+  const EXPERT_MODE_SELECTOR = "[role='radio'][data-model-type='expert']";
   const NEW_CHAT_PATTERN = /(开启新对话|新建对话|新的对话|新对话|new chat|start new chat)/i;
   const SEND_PATTERN = /^(发送|发送消息|send|send message)$/i;
   const COMPOSER_SELECTORS = [
@@ -34,6 +35,11 @@
   let bypassButton = null;
   let bypassButtonUntil = 0;
   let bypassKeyboard = false;
+  let nativeExpertModeActive = false;
+  let nativeModeUnavailable = false;
+  let nativeModeApplyTimer = 0;
+  let nativeModeApplyAttempts = 0;
+  let nativeModeObserver = null;
   let initialized = false;
 
   function isVisible(element) {
@@ -130,19 +136,30 @@
     ].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
   }
 
+  function isButtonDisabled(button) {
+    if (!button) return true;
+    const className = typeof button.className === "string" ? button.className : "";
+    return (button instanceof HTMLButtonElement && button.disabled)
+      || button.getAttribute("aria-disabled") === "true"
+      || /(^|\s)ds-button--disabled(\s|$)/.test(className);
+  }
+
   function buttonScore(button, composer) {
-    if (!(button instanceof HTMLButtonElement) || !isVisible(button)) return -Infinity;
+    if (!(button instanceof Element) || !isVisible(button)) return -Infinity;
     if (isInsideExtensionUi(button)) return -Infinity;
 
     const description = describeButton(button);
-    const testId = `${button.dataset.testid || ""} ${button.getAttribute("data-testid") || ""}`;
+    const testId = `${button.dataset?.testid || ""} ${button.getAttribute("data-testid") || ""}`;
+    const className = typeof button.className === "string" ? button.className : "";
     let score = 0;
 
     if (/send/i.test(testId)) score += 130;
     if (SEND_PATTERN.test(description)) score += 115;
     if (/(发送|send)/i.test(button.getAttribute("aria-label") || "")) score += 105;
-    if (button.type === "submit") score += 90;
-    if (button.disabled || button.getAttribute("aria-disabled") === "true") score -= 35;
+    if (button instanceof HTMLButtonElement && button.type === "submit") score += 90;
+    if (/ds-button--primary|ds-button--filled/.test(className)) score += 35;
+    if (/ds-button--floating|ds-button--outlinedNeutral/.test(className)) score -= 30;
+    if (isButtonDisabled(button)) score -= 35;
 
     const blockedLabels = /(深度思考|联网搜索|搜索|附件|上传|图片|语音|麦克风|clear|stop)/i;
     if (blockedLabels.test(description)) score -= 160;
@@ -166,9 +183,12 @@
     let container = composer.parentElement;
 
     for (let depth = 0; container && depth < 7; depth += 1, container = container.parentElement) {
-      container.querySelectorAll("button").forEach((button) => {
+      const previousCount = candidates.length;
+      container.querySelectorAll("button,[role='button']").forEach((button) => {
         if (!candidates.includes(button)) candidates.push(button);
       });
+      const nearbyCandidates = candidates.slice(previousCount);
+      if (nearbyCandidates.some((button) => buttonScore(button, composer) >= 55)) break;
       if (candidates.length && container.querySelector("form")) break;
     }
 
@@ -191,7 +211,15 @@
 
   function setPending(value) {
     pending = Boolean(value && settings.enabled);
-    if (pending) appliedInSession = false;
+    if (pending) {
+      appliedInSession = false;
+      nativeExpertModeActive = isExpertModeSelected(findExpertModeControl());
+      nativeModeUnavailable = false;
+      nativeModeApplyAttempts = 0;
+      scheduleNativeExpertModeApply();
+    } else {
+      stopNativeExpertModeApply();
+    }
     updateStatusUi();
   }
 
@@ -216,16 +244,14 @@
 
     if (awaitingConversationRoute && isExistingConversationPath(location.href)) {
       awaitingConversationRoute = false;
-      pending = false;
       appliedInSession = true;
-      updateStatusUi();
+      setPending(false);
       return;
     }
 
     if (isExistingConversationPath(location.href)) {
-      pending = false;
       appliedInSession = false;
-      updateStatusUi();
+      setPending(false);
       return;
     }
 
@@ -261,6 +287,102 @@
       .filter((entry) => entry.score > 0)
       .sort((a, b) => b.score - a.score);
     return matches.length ? matches[0].control : null;
+  }
+
+  function findExpertModeControl() {
+    const exactMatch = document.querySelector(EXPERT_MODE_SELECTOR);
+    if (exactMatch && isVisible(exactMatch) && !isInsideExtensionUi(exactMatch)) return exactMatch;
+
+    return Array.from(document.querySelectorAll("[role='radio']")).find((control) => {
+      if (!isVisible(control) || isInsideExtensionUi(control)) return false;
+      const label = [
+        control.getAttribute("aria-label"),
+        control.getAttribute("title"),
+        control.textContent
+      ].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+      return /专家模式/i.test(label);
+    }) || null;
+  }
+
+  function isExpertModeSelected(control) {
+    if (!control) return false;
+    if (control instanceof HTMLInputElement) return control.checked;
+    return control.getAttribute("aria-checked") === "true" || control.getAttribute("data-state") === "checked";
+  }
+
+  function stopNativeExpertModeApply() {
+    window.clearTimeout(nativeModeApplyTimer);
+    nativeModeApplyTimer = 0;
+    nativeModeApplyAttempts = 0;
+    nativeModeUnavailable = false;
+  }
+
+  function scheduleNativeExpertModeApply(delay = 0) {
+    if (!settings.enabled || !pending || nativeModeApplyTimer) return;
+    nativeModeApplyTimer = window.setTimeout(() => {
+      nativeModeApplyTimer = 0;
+      applyNativeExpertMode();
+    }, delay);
+  }
+
+  function applyNativeExpertMode() {
+    if (!settings.enabled || !pending) {
+      stopNativeExpertModeApply();
+      return;
+    }
+
+    const control = findExpertModeControl();
+    if (isExpertModeSelected(control)) {
+      nativeExpertModeActive = true;
+      nativeModeUnavailable = false;
+      nativeModeApplyAttempts = 0;
+      updateStatusUi();
+      return;
+    }
+
+    nativeExpertModeActive = false;
+    updateStatusUi();
+
+    if (control) {
+      try {
+        control.click();
+      } catch (_error) {
+        // DeepSeek 页面可能正在重绘控件，下一次重试会重新定位元素。
+      }
+    }
+
+    nativeModeApplyAttempts += 1;
+    if (nativeModeApplyAttempts <= 30) {
+      scheduleNativeExpertModeApply(control ? 140 : 180);
+      return;
+    }
+
+    nativeModeUnavailable = true;
+    updateStatusUi();
+  }
+
+  function observeNativeModeControl() {
+    if (!document.body || nativeModeObserver) return;
+    nativeModeObserver = new MutationObserver((records) => {
+      const pageChanged = records.some((record) => {
+        const target = record.target instanceof Element ? record.target : record.target.parentElement;
+        if (!target || isInsideExtensionUi(target)) return false;
+        const changedNodes = [...record.addedNodes, ...record.removedNodes];
+        return !changedNodes.length || changedNodes.some((node) => !(node instanceof Element) || !isInsideExtensionUi(node));
+      });
+      if (!pageChanged || !settings.enabled || !pending) return;
+      if (nativeModeUnavailable) {
+        nativeModeUnavailable = false;
+        nativeModeApplyAttempts = 0;
+      }
+      scheduleNativeExpertModeApply(40);
+    });
+    nativeModeObserver.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["aria-checked", "data-model-type"]
+    });
   }
 
   function showToast(message, success) {
@@ -315,9 +437,8 @@
       }
 
       settings = normalizeSettings({ ...settings, enabled: !settings.enabled });
-      pending = settings.enabled;
       appliedInSession = false;
-      updateStatusUi();
+      setPending(settings.enabled);
       try {
         await chrome.storage.sync.set({ [STORAGE_KEY]: settings });
       } catch (_error) {
@@ -355,7 +476,11 @@
     stateLabel.textContent = !settings.enabled
       ? "专家模式已暂停"
       : pending
-        ? "等待应用到下一条消息"
+        ? nativeExpertModeActive
+          ? "DeepSeek 专家模式已开启 · 等待首条消息"
+          : nativeModeUnavailable
+            ? "将通过首条消息应用专家配置"
+            : "正在切换 DeepSeek 专家模式"
         : appliedInSession
           ? "当前会话已应用"
           : "当前会话未应用";
@@ -366,7 +491,7 @@
   function attemptNativeSend(composer, attempt) {
     const sendButton = findSendButton(composer);
 
-    if (sendButton && !sendButton.disabled && sendButton.getAttribute("aria-disabled") !== "true") {
+    if (sendButton && !isButtonDisabled(sendButton) && typeof sendButton.click === "function") {
       bypassButton = sendButton;
       bypassButtonUntil = Date.now() + 1200;
       sendButton.click();
@@ -401,10 +526,9 @@
 
     const enhancedText = buildExpertPrompt(settings, originalText);
     setComposer(composer, enhancedText);
-    pending = false;
     appliedInSession = true;
     awaitingConversationRoute = true;
-    updateStatusUi();
+    setPending(false);
     showToast(`已应用「${getRole(settings).name}」专家配置`, true);
     window.setTimeout(() => attemptNativeSend(composer, 0), 70);
     return true;
@@ -431,7 +555,7 @@
       return;
     }
 
-    const button = event.target && event.target.closest ? event.target.closest("button") : null;
+    const button = event.target && event.target.closest ? event.target.closest("button,[role='button']") : null;
     if (!button || isInsideExtensionUi(button)) return;
 
     if (button === bypassButton && Date.now() < bypassButtonUntil) {
@@ -464,11 +588,16 @@
       .some((key) => previous[key] !== settings[key]);
 
     if (!settings.enabled) {
-      pending = false;
       appliedInSession = false;
+      nativeExpertModeActive = false;
+      setPending(false);
     } else if (!wasEnabled && settings.enabled) {
-      pending = true;
       appliedInSession = false;
+      setPending(true);
+    } else if (previous.autoApplyNewChat && !settings.autoApplyNewChat && !isExistingConversationPath(location.href) && pending) {
+      setPending(false);
+    } else if (settings.autoApplyNewChat && !isExistingConversationPath(location.href) && !appliedInSession) {
+      setPending(true);
     } else if (promptChanged && appliedInSession) {
       appliedInSession = false;
     }
@@ -491,12 +620,15 @@
   function initializePageState() {
     if (initialized) return;
     initialized = true;
-    pending = settings.enabled && !isExistingConversationPath(location.href);
+    pending = settings.enabled && settings.autoApplyNewChat && !isExistingConversationPath(location.href);
     appliedInSession = false;
+    nativeExpertModeActive = isExpertModeSelected(findExpertModeControl());
     mountStatusUi();
+    observeNativeModeControl();
+    if (pending) scheduleNativeExpertModeApply();
     updateStatusUi();
     if (pending) {
-      window.setTimeout(() => showToast(`已就绪 · ${getRole(settings).name}将在首条消息应用`, true), 700);
+      window.setTimeout(() => showToast(`已就绪 · 正在开启 DeepSeek 专家模式并准备${getRole(settings).name}配置`, true), 700);
     }
   }
 
@@ -515,6 +647,7 @@
         enabled: settings.enabled,
         pending,
         applied: appliedInSession,
+        nativeExpertModeActive,
         roleName: getRole(settings).name,
         url: location.href
       });
